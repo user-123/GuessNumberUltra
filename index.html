@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-hant-tw">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>JavaScript作業 (130期-19號-李迪西)</title>
+        <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+        <script>
+            
+            //主流程
+            window.onload = function() {
+                logDiv = document.querySelector("#log");
+                logPrint = document.getElementById("log");
+                setSubmitButton = document.getElementById("submit");
+                setClearButton = document.getElementById("clear");
+                let settingEvent = document.getElementsByClassName("setArea"); //getElementById不能抓取多個id，所以改成getElementsByClassName   //getElementsByClassName回傳是個array
+                for (index=0; index<settingEvent.length; index++) {
+                    settingEvent[index].addEventListener("input", getSettingOfNumsArea);
+                }
+                setSubmitButton.addEventListener("click", submitInput);
+                document.getElementById("clear").addEventListener("click", clearInput);
+                document.getElementById("restart").addEventListener("click", getSettingOfNumsArea);
+                document.getElementById("reset").addEventListener("click", resetAll);
+                document.getElementById("visible").addEventListener("click", showOrHideLog);
+                document.getElementById("skill").addEventListener("click", showHow);
+                getSettingOfNumsArea();
+                showHow();
+                // setNumsArea();
+                // createNumsArray();
+                // submitInput();
+                // resetAll();
+                showOrHideLog();
+            }
+            //抓取user設定的猜數範圍和數量
+            let numsCount = new Number;
+            let numsMaximum = new Number;
+            let numsMinimum = new Number;
+            let numsRange = new Number;
+            let settingEvent = new Function;
+            let setSubmitButton;
+            let setClearButton;
+            //設定猜數範圍和數量
+            let getSettingOfNumsArea = function(event) {
+                setSubmitButton.innerHTML = "猜";
+                numsCount = document.getElementById("setCount").value;
+                numsMaximum = document.getElementById("setMaximum").value;
+                numsMinimum = document.getElementById("setMinimum").value;
+                if ((numsCount==="")||(numsMaximum==="")||(numsMinimum==="")) { //沒有捕捉到無效的e，因為無效輸入會被當成空字串   //或是用event監聽阻擋不希望的輸入內容，甚至是不給輸入，只用選的，好處是也不用寫這麼多Exception handling
+                    console.log("疑~你是不是忘了填什麼呢，有困難要說餒，說不定我們可以一起笑你");
+                    logPrint.innerHTML = "疑~你是不是忘了填什麼呢，有困難要說餒，說不定我們可以一起笑你";
+                    document.getElementById("inputArea").innerHTML = "";
+                    setSubmitButton.disabled = true;
+                    setClearButton.disabled = true;
+                } else {
+                    numsCount -= 0;   //騷操作，觸發隱式轉型，無聊硬要而已    //應該改寫為numsCount = parseInt(numsCount, 10);
+                    numsMaximum -= 0;   //應該改寫為numsMaximum = parseInt(numsMaximum, 10);
+                    numsMinimum -= 0;   //應該改寫為numsMinimum = parseInt(numsMinimum, 10);
+                    setNumsArea();
+                }
+            }
+            let logPrint;
+            let setNumsArea = function() {
+                if (!(Number.isInteger(numsCount) && Number.isInteger(numsMaximum) && Number.isInteger(numsMinimum))) {
+                    console.log(`滾~你不要以為我不知道input type="number"即使設定好step，還是可以輸入非整數哦`);
+                    logPrint.innerHTML = `滾~你不要以為我不知道input type="number"即使設定好step，還是可以輸入非整數哦`;
+                    document.getElementById("inputArea").innerHTML = "";
+                    setSubmitButton.disabled = true;
+                    setClearButton.disabled = true;
+                } else if (numsCount===0) {
+                        console.log("你要猜0個數我也沒辦法，邏輯上是沒毛病的，我就看你怎麼輸入吧，呵呵");
+                        logPrint.innerHTML = "你要猜0個數我也沒辦法，我就看你怎麼輸入吧，呵呵";
+                        document.getElementById("inputArea").innerHTML = "";
+                        setSubmitButton.disabled = true;
+                        setClearButton.disabled = true;
+                } else if (numsCount<0) {
+                        console.log("要猜負數個數哦~老師~這裡有人頭殼壞掉了，啊~抱歉，我忘了你就是老師");
+                        logPrint.innerHTML = "要猜負數個數哦~老師~這裡有人頭殼壞掉了，啊~抱歉，我忘了你就是老師";
+                        document.getElementById("inputArea").innerHTML = "";
+                        setSubmitButton.disabled = true;
+                        setClearButton.disabled = true;
+                        //騷構思，在body或main的block設定over之類的，讓東西"閃爍"，
+                } else if (numsMaximum<numsMinimum){
+                        console.log("最大值小於最小值，請重新選取範圍");
+                        logPrint.innerHTML = "最大值小於最小值，請重新選取範圍";
+                        document.getElementById("inputArea").innerHTML = "";
+                        setSubmitButton.disabled = true;
+                        setClearButton.disabled = true;
+                } else {
+                    this.numsRange = numsMaximum-numsMinimum+1;
+                    if (this.numsRange<numsCount) {
+                        console.log("範圍小於猜數個數，請重新選取範圍");
+                        logPrint.innerHTML = "範圍小於猜數個數，請重新選取範圍";
+                        document.getElementById("inputArea").innerHTML = "";
+                        setSubmitButton.disabled = true;
+                        setClearButton.disabled = true;
+                    } else {
+                        numsRange = this.numsRange;
+                        createInputBox();
+                        console.log(`請猜${numsCount}個${numsMinimum}~${numsMaximum}的數`);
+                        logPrint.innerHTML = `請猜${numsCount}個${numsMinimum}~${numsMaximum}的數`;
+                        createNumsArray();
+                    }
+                }
+            }
+            //生成輸入框
+            let createInputBox = function() {
+                let htmlString = new String;
+                for (count=0; count<numsCount; count++) {
+                    htmlString += `<div class="inputNum">
+                        <input type="number" id="inputNum${count+1}" class="inputNum" name="inputNum" min="${numsMinimum}" max="${numsMaximum}" step="1" value="" required="required">
+                        </div>`;
+                }
+                document.getElementById("inputArea").innerHTML = htmlString;
+                /*這段需要修改的更精細，目前先閹割
+                let settingInputBoxEvent = document.getElementsByClassName("inputNum");
+                for (index=0; index<settingInputBoxEvent.length; index++) {
+                    settingInputBoxEvent[index].addEventListener("blur", getSettingOfNumsArea);
+                }
+                */
+            }
+            //隨機取數字
+            let numsArray=new Array;
+            let createNumsArray = function() {
+                numsArray=Array(numsCount);
+                //let numsPoolArray=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+                let numsPoolArray=new Array(numsRange);
+                this.numsMinimum=numsMinimum;
+                for (index=0; index<numsPoolArray.length; index++) {
+                    numsPoolArray[index]=this.numsMinimum++;
+                }
+                for (index=0; index<numsArray.length; index++) {
+                    let input=Math.floor(Math.random()*(numsPoolArray.length)); //原本邏輯錯誤寫成：let input=Math.floor(Math.random()*(numsPoolArray.length-index));
+                    numsArray[index] = numsPoolArray[input];
+                    numsPoolArray.splice(input, 1);
+                    //console.log(typeof numsArray[index])
+                    //console.log(`numsArray[${index}]=${numsArray[index]}`)
+                }
+                console.log(`隨機的數字：${numsArray}`);
+                logPrint.innerHTML += `<br>隨機的數字：${numsArray}`;
+                setSubmitButton.disabled = false;
+                setClearButton.disabled = false;
+            }
+            //檢查輸入數字重複，且檢查是否未填(也可用HTML標籤設定必填)
+            let checkInputNums = function() {
+                //addEventListener("input", checkInputFUNCTION);    //當輸入框一多，需要註冊一堆EventListener，效能上會有點問題
+                //vf
+            }
+            //觸發onclick輸入
+            let submitInput = function() {
+                logPrint.innerHTML = `請猜${numsCount}個${numsMinimum}~${numsMaximum}的數<br>隨機的數字：${numsArray}`;
+                getInputNums();
+                setSubmitButton.innerHTML = "再猜";
+            }
+            //抓取輸入
+            let inputNumsArray = new Array;
+            let getInputNums = function() {
+                /*這個方法再加上for each去除null值，是比較邏輯完備的方法，不過礙於效能問題，決定改成下面function，一開始就不加入空白的欄位
+                inputNumsArray = Array(numsCount);
+                for (let index=0; index<inputNumsArray.length; index++) {
+                    if (document.getElementById(`inputNum${index+1}`).value==="") {
+                        inputNumsArray[index]=null;
+                    } else {
+                        inputNumsArray[index]=document.getElementById(`inputNum${index+1}`).value-0; //騷操作，利用減0做轉型，不推薦
+                    }
+                    //console.log(typeof inputNumsArray[index])
+                    //console.log(`inputNumsArray[${index}]=${inputNumsArray[index]}`);
+                }
+                */
+                inputNumsArray = [];
+                for (let index=0; index<numsCount; index++) {
+                    if (document.getElementById(`inputNum${index+1}`).value!=="") {
+                        inputNumsArray.push(document.getElementById(`inputNum${index+1}`).value-0); //騷操作，利用減0做轉型，不推薦
+                    }
+                }
+                console.log(`輸入的數字：${inputNumsArray}`);
+                logPrint.innerHTML += `<br>輸入的數字：${inputNumsArray}`;
+                //return inputNumsArray;
+                compareNums();
+            }
+            //比對數字
+            let compareNums = function() {
+                let inputNumsArrayToSet = new Set(inputNumsArray);  //去除重複輸入
+                inputNumsArray = [...inputNumsArrayToSet];  //將set轉回array
+                let matchNumsArray = numsArray.filter((element) => {return inputNumsArray.indexOf(element) > -1});  //取交集：numsArray[] ∩ inputNumsArray[]
+                let mismatchNumsArray = inputNumsArray.filter((element) => {return numsArray.indexOf(element) === -1}); //取差集：inputNumsArray[] - numsArray[]
+                let restOfNumsArray = numsArray.filter((element) => {return inputNumsArray.indexOf(element) === -1});   //取差集：numsArray[] - inputNumsArray[]
+                let outOfRangeNumsArray = [];
+                for (index=0; index<mismatchNumsArray.length; index++) {
+                    if ((mismatchNumsArray[index]>numsMaximum)||(mismatchNumsArray [index]<numsMinimum)) {
+                        outOfRangeNumsArray.push(mismatchNumsArray[index]);
+                    }
+                };
+                console.log(`猜對的數字：${matchNumsArray.sort(function(a, b) {return a-b;})}`);    //升序排列Array，使用自定義function，避免遇到轉成string比較的問題
+                console.log(`猜錯的數字：${mismatchNumsArray.sort(function(a, b) {return a-b;})}`);    //升序排列Array
+                console.log(`未猜中的數字：${restOfNumsArray.sort(function(a, b) {return a-b;})}`);    //升序排列Array
+                console.log(`超出範圍的數字：${outOfRangeNumsArray.sort(function(a, b) {return a-b;})}`);    //升序排列Array
+                logPrint.innerHTML += `<br>猜對的數字：${matchNumsArray.sort(function(a, b) {return a-b;})}`;   //這邊其實不再需要array.sort了，因為前面console時已經改寫，不過為免以後改寫時漏掉，這邊先予保留
+                logPrint.innerHTML += `<br>猜錯的數字：${mismatchNumsArray.sort(function(a, b) {return a-b;})}`;   //這邊其實不再需要array.sort了
+                logPrint.innerHTML += `<br>未猜中的數字：${restOfNumsArray.sort(function(a, b) {return a-b;})}`;   //這邊其實不再需要array.sort了
+                logPrint.innerHTML += `<br>超出範圍的數字：${outOfRangeNumsArray.sort(function(a, b) {return a-b;})}`;   //這邊其實不再需要array.sort了
+                if (matchNumsArray.length===numsCount) {
+                    logPrint.innerHTML += `<br><strong>你全猜對了，沒有獎勵哦</strong>`;
+                } else if (mismatchNumsArray===0) {
+                    logPrint.innerHTML += `<br><strong>厲害，你全猜錯了呢</strong>`;
+                } else {
+                    logPrint.innerHTML += `<br>猜對了${matchNumsArray.length}個數字，猜錯了${mismatchNumsArray.length}個數字，未猜中${restOfNumsArray.length}個數字，漏猜或重複${numsCount-inputNumsArray.length}個數字`;       //這邊的inputNumsArray已經進行過去除重複
+                }
+                if (outOfRangeNumsArray>0) {
+                    logPrint.innerHTML += `，有${outOfRangeNumsArray.length}個數超出範圍`;
+                }
+            }
+            
+            //輸出結果
+            let outputResult = function() {
+                //innerHTML
+            }
+            //清空輸入
+            let clearInput = function() {
+                //清除HTML輸入
+                for (let i=0; i<numsCount; i++) {
+                    document.getElementById(`inputNum${i+1}`).value = "";
+                }
+            }
+            //重置
+            let resetAll = function() {
+                //重置Array
+                /*清空Array可以不做，養成好習慣還是做一下吧
+                numsArray = [];
+                inputNumsArray = [];
+                matchNumsArray = [];
+                mismatchNumsArray = [];
+                restOfNumsArray = [];
+                outOfRangeNumsArray = [];
+                */
+                //clearInput();
+                //let initial = Promise();
+                document.getElementById("setCount").value = 5;
+                document.getElementById("setMaximum").value = 9;
+                document.getElementById("setMinimum").value = 0;
+                setSubmitButton.disabled = false; //document.querySelector("#submit").disabled = false;
+                setClearButton.disabled = false;
+                setTimeout(() => {
+                    getSettingOfNumsArea();
+                }, 100);
+            }
+            let logDiv;
+            let showOrHideLog = function() {
+                if (logDiv.getAttribute("class") == "showLog") {
+                    logDiv.setAttribute("class", "hideLog");
+                    logDiv.style.display = "none";
+                    document.getElementById("visible").innerHTML = "顯示";
+                } else {
+                    logDiv.setAttribute("class", "showLog");
+                    logDiv.style.display = "inline";
+                    document.getElementById("visible").innerHTML = "隱藏";
+                }
+            }
+            let showHow = function() {
+                let directions = `<div>
+                    功能說明：<br>
+                    可設定任意整數，不過有做以下卡控：<br>
+                    範圍小於猜數量<br>
+                    最大值小於最小值<br>
+                    最大值、最小值、猜數量不可為非整數、空白或無效的科學記數<br>
+                    猜數量不可為0或負數<br>
+                    當然啦，你想試試還是沒問題的，我準備了滿滿的greeting等著<br>
+                    <br>
+                    按鈕說明：<br>
+                    猜/再猜：選定條件後並輸入猜數，按下即可比對array，輸入新數字可按下繼續再猜<br>
+                    清除：可將輸入框內容全部清除<br>
+                    重猜：重新生成新array，但會維持原本選定條件<br>
+                    重置：重設選定條件<br>
+                    隱藏/顯示：顯示或隱藏log框<br>
+                    說明：按下去就是你現在看到的這些，還需要我說明嗎<br>
+                    <br>
+                    已知問題：因為要註冊一堆input檢查event雖然用for loop能很輕鬆的做出來，不過有可能會產生兩個問題，效能問題和event loop，故先閹割掉了，不過會在log中秀出超出範圍的input<br>
+                    用keypress或等等之類的方法去focus到下個input並不適合這個頁面，故不實作<br>
+                    <br>
+                    ※小murmur：能力有限，故時間緊迫，如果有邏輯不完備的地方歡迎指正出來，另外就是UI也沒空刻完，醜醜的就先拉出接客了，請見諒
+                    </div>`;
+                let modal = $(directions).dialog({
+                    width: 600, modal: true, autoOpen: true, title: "遊戲說明",
+                    buttons: [{text: "好der", click: function() {$(this).dialog("close");}}]
+                });
+            }
+        </script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            div#inputArea {
+                float: center;
+                margin: 20px;
+                padding: 15px;
+                max-height: 50%;
+                border: 1px solid red;
+            }
+            div.inputNum {
+                display: inline-block;
+                margin: 5px;
+                padding: 0px;
+            }
+            div.btn {
+                float: left;
+                margin: 15px;
+                padding: 10px;
+                width: 40%;
+                border: 1px dotted red;
+            }
+            div .chkBtn,.clrBtn,.rstBtn,.logBtn {
+                display: inline-block;
+                margin: 2px;
+                padding: 0px;
+            }
+            div#showLog,#hideLog {
+                float: right;
+                margin: 5px;
+                width: 40%;
+                border: 0px double red;
+                
+            }
+        </style>
+    </head>
+    <body class="bg">
+        <div>
+            <form action="">
+                <legend><strong>設定猜數條件</strong><br>(支援所有整數，除非overflow，或是你的瀏覽器撐不住，搭配console log風味更佳，至於code就沒空優化，只能辛苦老師了，可以測試手動輸入奇奇怪怪的數字會有驚喜哦~)</legend>
+                輸入最大值：<input type="number" id="setMaximum" class="setArea" name="maximum" step="1" value="9">
+                輸入最小值：<input type="number" id="setMinimum" class="setArea" name="minimum" step="1" value="0">
+                輸入猜數量：<input type="number" id="setCount" class="setArea" name="count" min="0" step="1" value="5">
+            </form>
+        </div>
+        <div id="inputArea" class="input">
+            <!--<div class="inputNum">
+                <input type="number" id="inputNum1" class="inputNum" name="inputNum" min="0" max="9" step="1" value="0">
+            </div>
+            <div class="inputNum">
+                <input type="number" id="inputNum2" class="inputNum" name="inputNum" min="0" max="9" step="1" value="1">
+            </div>
+            <div class="inputNum">
+                <input type="number" id="inputNum3" class="inputNum" name="inputNum" min="0" max="9" step="1" value="2">
+            </div>
+            <div class="inputNum">
+                <input type="number" id="inputNum4" class="inputNum" name="inputNum" min="0" max="9" step="1" value="3">
+            </div>
+            <div class="inputNum">
+                <input type="number" id="inputNum5" class="inputNum" name="inputNum" min="0" max="9" step="1" value="4">
+            </div>-->
+        </div>
+        <div class="btnSet">
+            <div class="chkBtn">
+                <button type="button" id="submit" class="btn btn-outline-primary">猜</button>
+            </div>
+            <div class="clrBtn">
+                <button type="button" id="clear" class="btn btn-outline-secondary">清除</button>
+            </div>
+            <div class="rstBtn">
+                <button type="button" id="restart" class="btn btn-outline-warning">重猜</button>
+            </div>
+            <div class="rstBtn">
+                <button type="button" id="reset" class="btn btn-outline-danger">重置</button>
+            </div>
+            <div class="logBtn">
+                <button type="button" id="visible" class="btn btn-outline-info">隱藏</button>
+            </div>
+            <div class="sklBtn">
+                <button type="button" id="skill" class="btn btn-outline-dark">說明</button>
+            </div>
+        </div>
+        <div id="showLog">
+            <div id="log"></div>
+        </div>
+    </body>
+</html>
